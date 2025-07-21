@@ -1,86 +1,100 @@
--- Gui Setup
-local plr = game.Players.LocalPlayer
-local gui = Instance.new("ScreenGui", plr:WaitForChild("PlayerGui"))
-gui.Name = "DoorsESP_GUI"
-gui.ResetOnSpawn = false
 
--- Main Frame
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 250, 0, 150)
-frame.Position = UDim2.new(0.3, 0, 0.3, 0)
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-frame.BorderSizePixel = 0
-frame.Draggable = true
-frame.Active = true
+--// GUI with Minimize and Cube Button + ESP for Doors, Keys, Entities //--
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+-- GUI Setup
+local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+ScreenGui.Name = "DoorsESP_GUI"
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+Frame.Position = UDim2.new(0.3, 0, 0.3, 0)
+Frame.Size = UDim2.new(0, 250, 0, 150)
+Frame.Active = true
+Frame.Draggable = true
+Frame.Name = "MainFrame"
 
 -- Minimize Button
-local minBtn = Instance.new("TextButton", frame)
-minBtn.Size = UDim2.new(0, 30, 0, 30)
-minBtn.Position = UDim2.new(1, -65, 0, 5)
-minBtn.Text = "-"
-minBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+local Minimize = Instance.new("TextButton", Frame)
+Minimize.Size = UDim2.new(0, 25, 0, 25)
+Minimize.Position = UDim2.new(1, -55, 0, 0)
+Minimize.Text = "-"
+Minimize.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Minimize.TextColor3 = Color3.new(1, 1, 1)
 
--- Close Button
-local closeBtn = Instance.new("TextButton", frame)
-closeBtn.Size = UDim2.new(0, 30, 0, 30)
-closeBtn.Position = UDim2.new(1, -35, 0, 5)
-closeBtn.Text = "X"
-closeBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+-- Close Button (turns into cube)
+local Close = Instance.new("TextButton", Frame)
+Close.Size = UDim2.new(0, 25, 0, 25)
+Close.Position = UDim2.new(1, -25, 0, 0)
+Close.Text = "X"
+Close.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+Close.TextColor3 = Color3.new(1, 1, 1)
 
--- Hidden Cube
-local cube = Instance.new("TextButton", gui)
-cube.Size = UDim2.new(0, 50, 0, 50)
-cube.Position = UDim2.new(0.5, 0, 0.5, 0)
-cube.Text = "📦"
-cube.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-cube.Visible = false
-cube.Draggable = true
-cube.Active = true
+-- Cube Button
+local Cube = Instance.new("TextButton", ScreenGui)
+Cube.Size = UDim2.new(0, 40, 0, 40)
+Cube.Position = UDim2.new(0.05, 0, 0.6, 0)
+Cube.BackgroundColor3 = Color3.new(0, 0, 0)
+Cube.TextColor3 = Color3.new(1, 1, 1)
+Cube.Text = "🔲"
+Cube.Visible = false
+Cube.Draggable = true
 
--- Minimize logic
-minBtn.MouseButton1Click:Connect(function()
-	for _, v in pairs(frame:GetChildren()) do
-		if v:IsA("TextButton") and v ~= minBtn and v ~= closeBtn then
-			v.Visible = not v.Visible
+Minimize.MouseButton1Click:Connect(function()
+	for _, obj in pairs(Frame:GetChildren()) do
+		if obj ~= Minimize and obj ~= Close then
+			obj.Visible = not obj.Visible
 		end
 	end
 end)
 
--- Close into cube
-closeBtn.MouseButton1Click:Connect(function()
-	frame.Visible = false
-	cube.Visible = true
+Close.MouseButton1Click:Connect(function()
+	Frame.Visible = false
+	Cube.Visible = true
 end)
 
--- Reopen from cube
-cube.MouseButton1Click:Connect(function()
-	frame.Visible = true
-	cube.Visible = false
+Cube.MouseButton1Click:Connect(function()
+	Frame.Visible = true
+	Cube.Visible = false
 end)
 
 -- ESP Function
-local function createESP(target, color)
-	local esp = Instance.new("BoxHandleAdornment")
-	esp.Adornee = target
-	esp.AlwaysOnTop = true
-	esp.ZIndex = 5
-	esp.Size = target:GetExtentsSize()
-	esp.Transparency = 0.5
-	esp.Color3 = color
-	esp.Parent = target
+function CreateESP(obj, color, text)
+	local box = Instance.new("BillboardGui", obj)
+	box.Name = "ESP"
+	box.Adornee = obj
+	box.Size = UDim2.new(0, 100, 0, 40)
+	box.AlwaysOnTop = true
+
+	local label = Instance.new("TextLabel", box)
+	label.Size = UDim2.new(1, 0, 1, 0)
+	label.BackgroundTransparency = 1
+	label.Text = text
+	label.TextColor3 = color
+	label.TextScaled = true
 end
 
--- Start ESP
-for _, obj in pairs(workspace:GetDescendants()) do
-	if obj:IsA("Model") then
-		if obj.Name == "KeyObtain" then
-			createESP(obj, Color3.fromRGB(255, 255, 0)) -- Yellow for keys
-		elseif obj.Name:lower():find("door") then
-			createESP(obj, Color3.fromRGB(0, 255, 255)) -- Cyan for doors
-		elseif obj.Name:lower():find("lever") or obj.Name:lower():find("crank") then
-			createESP(obj, Color3.fromRGB(255, 125, 0)) -- Orange for levers
-		elseif obj.Name:lower():find("seek") or obj.Name:lower():find("screech") then
-			createESP(obj, Color3.fromRGB(255, 0, 0)) -- Red for mobs
+-- Add ESP to Items
+function AddESP()
+	for _, v in pairs(Workspace:GetDescendants()) do
+		if v:IsA("Model") or v:IsA("Part") then
+			if v:FindFirstChild("DoorPrompt") and not v:FindFirstChild("ESP") then
+				CreateESP(v, Color3.fromRGB(0, 255, 255), "🚪 Door")
+			elseif v.Name:lower():find("key") and not v:FindFirstChild("ESP") then
+				CreateESP(v, Color3.fromRGB(255, 255, 0), "🔑 Key")
+			elseif v.Name:lower():find("rush") or v.Name:lower():find("ambush") or v.Name:lower():find("screech") then
+				if not v:FindFirstChild("ESP") then
+					CreateESP(v, Color3.fromRGB(255, 0, 0), "👹 Entity")
+				end
+			end
 		end
 	end
 end
+
+AddESP()
+Workspace.DescendantAdded:Connect(function()
+	task.wait(1)
+	AddESP()
+end)
